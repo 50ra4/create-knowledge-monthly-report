@@ -5,6 +5,11 @@ import { join } from 'node:path';
 config();
 
 test('create knowledge monthly report', async ({ page }) => {
+  // Headerの設定
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'ja',
+  });
+
   // ログインページに移動
   await page.goto(join(process.env.BASE_URL, '/'));
 
@@ -21,6 +26,9 @@ test('create knowledge monthly report', async ({ page }) => {
   // ログイン後画面に遷移したことを確認
   await expect(page).toHaveURL(/.*open.knowledge\/list/);
 
+  // 日本語に設定を切り替え
+  await page.goto(join(process.env.BASE_URL, '/lang/select/ja'));
+
   // 最新記事の一覧を取得
   const locators = await page
     .locator('#knowledgeList > div.knowledge_list > div.knowledge_item')
@@ -35,6 +43,7 @@ type ArticleMeta = {
   title: string;
   url: string;
   author: string;
+  postedDate: string;
 };
 
 /**
@@ -58,20 +67,27 @@ const loadArticleInfo = async (locator: Locator): Promise<ArticleMeta> => {
     .first()
     .textContent();
 
+  const postDateText = await locator.locator('div > div').first().innerText();
+
   const url = join(
     process.env.BASE_URL,
     ...(hrefText ?? '').split('?')[0].split('/').slice(2),
     // NOTE: クエリパラメータを外し、先頭のパスパラメータを外す
-    // input: /knowledge/aaaaa/bbbb/cccc?=...
+    // input: /foo/aaaaa/bbbb/cccc?=...
     // expect: aaaa,bbbb,cccc
   );
   const no = +(numberText ?? '').trim().slice(1);
   const title = (titleText ?? '').replace(`#${no}`, '').trim();
+
+  // NOTE: '[未読] aaaa bbbb が 2024/12/30 12:32 に投稿' となっているので、日時のみを取得する
+  const postedDate =
+    (postDateText ?? '').match(/\d{4}\/\d{2}\/\d{2} \d{1,2}:\d{2}/)?.[0] ?? '';
 
   return {
     url,
     no,
     title,
     author: authorText ?? '',
+    postedDate,
   };
 };
