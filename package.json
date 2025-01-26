@@ -1,16 +1,16 @@
 {
-  "name": "playwright-introduce",
+  "name": "create-knowledge-monthly-report",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint:prettier": "prettier --write '{tests,tests-examples}/**/*.{js,ts}'",
-    "lint:eslint": "eslint --fix '{tests,tests-examples}/**/*.{js,ts}'",
+    "lint:prettier": "prettier --write '{tests}/**/*.{js,ts}'",
+    "lint:eslint": "eslint --fix '{tests}/**/*.{js,ts}'",
     "lint": "npm run lint:prettier && npm run lint:eslint",
     "prepare": "husky"
   },
   "keywords": [],
-  "author": "",
+  "author": "50ra4",
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "9.17.0",
