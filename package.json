@@ -1,0 +1,28 @@
+{
+  "name": "playwright-introduce",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint:prettier": "prettier --write '{tests,tests-examples}/**/*.{js,ts}'",
+    "lint:eslint": "eslint --fix '{tests,tests-examples}/**/*.{js,ts}'",
+    "lint": "npm run lint:prettier && npm run lint:eslint",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "9.17.0",
+    "@playwright/test": "1.49.1",
+    "@types/node": "22.10.3",
+    "dotenv": "16.4.7",
+    "eslint": "9.17.0",
+    "eslint-config-prettier": "9.1.0",
+    "globals": "15.14.0",
+    "husky": "9.1.7",
+    "lint-staged": "15.3.0",
+    "prettier": "3.4.2",
+    "typescript-eslint": "8.19.0"
+  }
+}
