@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+import { Command } from 'commander';
 import { join } from 'node:path';
 import { chromium, Locator, Page } from 'playwright';
 
@@ -15,7 +16,7 @@ type ArticleMeta = {
  * Locatorから記事情報を抜き出す
  */
 const createArticleExtractor =
-  (baseUrl: string) =>
+  (url: string) =>
   async (locator: Locator): Promise<ArticleMeta> => {
     const hrefText = await locator
       .locator('div.insert_info > a')
@@ -36,8 +37,9 @@ const createArticleExtractor =
 
     const postDateText = await locator.locator('div > div').first().innerText();
 
-    const url = join(
-      baseUrl,
+    const articleUrl = join(
+      url,
+      // FIXME: サブディレクトリを考慮する
       ...(hrefText ?? '').split('?')[0].split('/').slice(2),
       // NOTE: クエリパラメータを外し、先頭のパスパラメータを外す
       // input: /foo/aaaaa/bbbb/cccc?=...
@@ -52,7 +54,7 @@ const createArticleExtractor =
       '';
 
     return {
-      url,
+      url: articleUrl,
       no,
       title,
       author: authorText ?? '',
@@ -66,11 +68,11 @@ const createArticleExtractor =
 const scribePage = async (
   page: Page,
   {
-    baseUrl,
+    url,
     id,
     password,
   }: {
-    baseUrl: string;
+    url: string;
     id: string;
     password: string;
   },
@@ -81,7 +83,7 @@ const scribePage = async (
   });
 
   // ログインページに移動
-  await page.goto(join(baseUrl, '/'));
+  await page.goto(join(url, '/'));
 
   // ページ遷移が正常か？
   const topPageTitle = await page.title();
@@ -91,10 +93,10 @@ const scribePage = async (
 
   // IDとPassword入力
   await page.getByPlaceholder('ID').fill(id);
-  await page.getByPlaceholder('Password').fill(password);
+  await page.getByPlaceholder('パスワード').fill(password);
 
   // ログインボタンを押下
-  await page.getByRole('button', { name: /Sign In/ }).click();
+  await page.getByRole('button', { name: /サインイン/ }).click();
 
   // ログイン後の画面に遷移したことを確認
   if (!page.url().match(/.*open.knowledge\/list/)) {
@@ -102,7 +104,7 @@ const scribePage = async (
   }
 
   // 日本語に設定を切り替え
-  await page.goto(join(baseUrl, '/lang/select/ja'));
+  // await page.goto(join(baseUrl, '/lang/select/ja'));
 
   // 最新記事の一覧を取得
   const locators = await page
@@ -110,24 +112,39 @@ const scribePage = async (
     .all();
 
   const latestArticles = await Promise.all(
-    locators.map(createArticleExtractor(baseUrl)),
+    locators.map(createArticleExtractor(url)),
   );
 
   return { latestArticles };
 };
 
 /**
+ * コマンドライン引数をいい感じに取得する
+ */
+const getOptions = () =>
+  new Command()
+    .option('-h, --headless', 'Running in headless mode.', false)
+    .parse(process.argv)
+    .opts();
+
+/**
  * 最初に呼び出される関数
  */
 const main = async () => {
+  // .envファイルを読み込む
   config();
-  const browser = await chromium.launch();
+
+  const headless = !!getOptions()['headless'];
+
+  const browser = await chromium.launch({
+    headless,
+  });
 
   try {
     const page = await browser.newPage();
 
     const { latestArticles } = await scribePage(page, {
-      baseUrl: process.env.BASE_URL,
+      url: process.env.BASE_URL,
       id: process.env.USERNAME,
       password: process.env.PASSWORD,
     });
