@@ -37,13 +37,15 @@ const createArticleExtractor =
 
     const postDateText = await locator.locator('div > div').first().innerText();
 
+    const urlObj = new URL(url);
+    const subDirectory = urlObj.pathname === '/' ? '' : urlObj.pathname;
+
     const articleUrl = join(
       url,
-      // FIXME: サブディレクトリを考慮する
-      ...(hrefText ?? '').split('?')[0].split('/').slice(2),
-      // NOTE: クエリパラメータを外し、先頭のパスパラメータを外す
+      // NOTE: サブディレクトリとクエリパラメータを外す
       // input: /foo/aaaaa/bbbb/cccc?=...
       // expect: aaaa,bbbb,cccc
+      ...(hrefText ?? '').replace(subDirectory, '').split('?')[0].split('/'),
     );
     const no = +(numberText ?? '').trim().slice(1);
     const title = (titleText ?? '').replace(`#${no}`, '').trim();
