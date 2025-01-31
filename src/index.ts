@@ -109,15 +109,27 @@ const scribePage = async (
   // await page.goto(join(baseUrl, '/lang/select/ja'));
 
   // 最新記事の一覧を取得
-  const locators = await page
+  const latestLocators = await page
     .locator('#knowledgeList > div.knowledge_list > div.knowledge_item')
     .all();
 
   const latestArticles = await Promise.all(
-    locators.map(createArticleExtractor(url)),
+    latestLocators.map(createArticleExtractor(url)),
   );
 
-  return { latestArticles };
+  // 人気記事のページに移動
+  await page.goto(join(url, '/open.knowledge/show_popularity'));
+
+  // 人気記事の一覧を取得
+  const popularLocators = await page
+    .locator('#knowledgeList > div.knowledge_list > div.knowledge_item')
+    .all();
+
+  const popularArticles = await Promise.all(
+    popularLocators.slice(0, 5).map(createArticleExtractor(url)),
+  );
+
+  return { latestArticles, popularArticles };
 };
 
 /**
@@ -145,13 +157,14 @@ const main = async () => {
   try {
     const page = await browser.newPage();
 
-    const { latestArticles } = await scribePage(page, {
+    const { latestArticles, popularArticles } = await scribePage(page, {
       url: process.env.BASE_URL,
       id: process.env.USERNAME,
       password: process.env.PASSWORD,
     });
 
-    console.log('latest', latestArticles.at(0));
+    console.log('latest', latestArticles.slice(0, 5));
+    console.log('popular', popularArticles);
   } catch (error) {
     console.error(error);
     process.exit(1);
