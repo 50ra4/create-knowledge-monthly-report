@@ -3,7 +3,15 @@ import { Command } from 'commander';
 import { join, resolve } from 'node:path';
 import { chromium, Locator, Page } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { parse, format, isValid } from 'date-fns';
+import {
+  parse,
+  format,
+  isValid,
+  eachDayOfInterval,
+  startOfMonth,
+  lastDayOfMonth,
+  getDate,
+} from 'date-fns';
 
 /** 記事情報のオブジェクト */
 type ArticleMeta = {
@@ -14,11 +22,14 @@ type ArticleMeta = {
   postedDate: string;
 };
 
-type MonthFormat = 'yyyyMM' | 'yyyy年MM月';
+type DateFormat = 'yyyyMM' | 'yyyy年MM月' | 'yyyy-MM' | 'yyyy/MM/dd H:mm';
 
-const parseMonth = (s: string, f: MonthFormat) => parse(s, f, new Date());
+const parseDate = (s: string, f: DateFormat) => parse(s, f, new Date());
 
-const formatMonth = (d: Date, f: MonthFormat) => format(d, f);
+const formatDate = (d: Date, f: DateFormat) => format(d, f);
+
+const changeMonthFormat = (s: string, from: DateFormat, to: DateFormat) =>
+  formatDate(parseDate(s, from), to);
 
 /**
  * Locatorから記事情報を抜き出す
@@ -149,25 +160,66 @@ const generateArticlesText = (articles: ArticleMeta[]) =>
     .reduce(
       (acc, { no, title, url, author }) => [
         ...acc,
-        [`#${no} ${title} ${author}`, url].join('\n'),
+        [`#${no} ${title} by ${author}`, url].join('\n'),
       ],
       [] as string[],
     )
     .join('\n');
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 /**
  * 指定した月のコントリビューションカレンダーを作成する
  * @param articles
  */
-const generateContributionGraph = (articles: ArticleMeta[]) =>
-  articles
+const generateContributionGraph = (
+  targetMonth: string,
+  articles: ArticleMeta[],
+) => {
+  const title = `${articles.length} contributions in ${changeMonthFormat(targetMonth, 'yyyyMM', 'yyyy-MM')}`;
+
+  const targetDate = parseDate(targetMonth, 'yyyyMM');
+  const postedDays = articles.map(({ postedDate }) =>
+    // NOTE: 2025/01/02 -> 2
+    getDate(parseDate(postedDate, 'yyyy/MM/dd H:mm')),
+  );
+
+  const startDate = startOfMonth(targetDate);
+  const endDate = lastDayOfMonth(targetDate);
+
+  const contributionPoints = eachDayOfInterval({
+    start: startDate,
+    end: endDate,
+  })
+    // NOTE: 文字列に変換
+    .map((date) => getDate(date))
+    // NOTE: 日付とその日の記事件数のMapを作成
     .reduce(
-      (acc) => {
-        return acc;
-      },
-      ['FIXME:'] as string[],
+      (acc, day) => acc.set(day, postedDays.filter((d) => d === day).length),
+      new Map<number, number>(),
+    );
+
+  const metrics = Array.from({ length: 7 })
+    .map((_, i) =>
+      // NOTE: 1日が水曜日の場合、最初の日曜日は5日を計算する
+      Array.from({ length: 5 }).map(
+        (_, j) => 7 * j - startDate.getDay() + i + 1,
+      ),
     )
-    .join('\n');
+    .map((days) =>
+      days.map((day) =>
+        // NOTE: 日付が当月でない（0未満または最終日より先）は「-」、記事がある日は「■」、ない日は「□」
+        day < 1 || getDate(endDate) < day
+          ? '-'
+          : (contributionPoints.get(day) ?? 0) > 0
+            ? '■'
+            : '□',
+      ),
+    )
+    .map((cells, i) => [WEEKDAYS[i], ...cells].join(' '));
+
+  return [title, ...metrics].join('\n');
+};
 
 /**
  * 取得した情報で記事を出力する
@@ -187,13 +239,11 @@ const outputReport = ({
   latestArticles: ArticleMeta[];
   popularArticles: ArticleMeta[];
 }) => {
-  // 先月の記事のみ抽出する
+  // 当月の記事のみ抽出する
   const targetMonthArticles = latestArticles.filter(
-    (article) =>
-      formatMonth(
-        parse(article.postedDate, 'yyyy/MM/dd H:mm', new Date()),
-        'yyyyMM',
-      ) === targetMonth,
+    ({ postedDate }) =>
+      targetMonth ===
+      changeMonthFormat(postedDate, 'yyyy/MM/dd H:mm', 'yyyyMM'),
   );
 
   const content = readFileSync(template, 'utf-8')
@@ -202,7 +252,7 @@ const outputReport = ({
     .replaceAll('@knowledgeUrl@', url)
     .replaceAll(
       '@targetMonth@',
-      formatMonth(parseMonth(targetMonth, 'yyyyMM'), 'yyyy年MM月'),
+      changeMonthFormat(targetMonth, 'yyyyMM', 'yyyy年MM月'),
     )
     .replaceAll(
       '@targetMonthArticles@',
@@ -215,16 +265,12 @@ const outputReport = ({
     )
     .replaceAll(
       '@contributionGraph@',
-      generateContributionGraph(targetMonthArticles),
+      generateContributionGraph(targetMonth, targetMonthArticles),
     );
 
   // ファイルを出力する
   const filename = resolve(
-    join(
-      '.',
-      outputDir,
-      `${targetMonth}-report.${format(new Date(), 'yyyyMMddHHmmss')}.txt`,
-    ),
+    join('.', outputDir, `${targetMonth}-report.${+new Date()}.txt`),
   );
 
   writeFileSync(filename, content);
@@ -261,7 +307,7 @@ const main = async () => {
   config();
 
   const targetMonth: string = getOptions()['month'];
-  if (!isValid(parseMonth(targetMonth, 'yyyyMM'))) {
+  if (!isValid(parseDate(targetMonth, 'yyyyMM'))) {
     throw new Error('Specify the month in the format "yyyyMM".');
   }
 
