@@ -1,7 +1,9 @@
 import { config } from 'dotenv';
 import { Command } from 'commander';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { chromium, Locator, Page } from 'playwright';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { parse, format, isValid } from 'date-fns';
 
 /** 記事情報のオブジェクト */
 type ArticleMeta = {
@@ -11,6 +13,12 @@ type ArticleMeta = {
   author: string;
   postedDate: string;
 };
+
+type MonthFormat = 'yyyyMM' | 'yyyy年MM月';
+
+const parseMonth = (s: string, f: MonthFormat) => parse(s, f, new Date());
+
+const formatMonth = (d: Date, f: MonthFormat) => format(d, f);
 
 /**
  * Locatorから記事情報を抜き出す
@@ -126,10 +134,100 @@ const scribePage = async (
     .all();
 
   const popularArticles = await Promise.all(
-    popularLocators.slice(0, 5).map(createArticleExtractor(url)),
+    popularLocators.map(createArticleExtractor(url)),
   );
 
   return { latestArticles, popularArticles };
+};
+
+/**
+ * いい感じに記事の一覧を作成する
+ * @param articles
+ */
+const generateArticlesText = (articles: ArticleMeta[]) =>
+  articles
+    .reduce(
+      (acc, { no, title, url, author }) => [
+        ...acc,
+        [`#${no} ${title} ${author}`, url].join('\n'),
+      ],
+      [] as string[],
+    )
+    .join('\n');
+
+/**
+ * 指定した月のコントリビューションカレンダーを作成する
+ * @param articles
+ */
+const generateContributionGraph = (articles: ArticleMeta[]) =>
+  articles
+    .reduce(
+      (acc) => {
+        return acc;
+      },
+      ['FIXME:'] as string[],
+    )
+    .join('\n');
+
+/**
+ * 取得した情報で記事を出力する
+ */
+const outputReport = ({
+  targetMonth,
+  outputDir,
+  template,
+  url,
+  latestArticles,
+  popularArticles,
+}: {
+  targetMonth: string;
+  outputDir: string;
+  template: string;
+  url: string;
+  latestArticles: ArticleMeta[];
+  popularArticles: ArticleMeta[];
+}) => {
+  // 先月の記事のみ抽出する
+  const targetMonthArticles = latestArticles.filter(
+    (article) =>
+      formatMonth(
+        parse(article.postedDate, 'yyyy/MM/dd H:mm', new Date()),
+        'yyyyMM',
+      ) === targetMonth,
+  );
+
+  const content = readFileSync(template, 'utf-8')
+    .toString()
+    // タグを置き換える
+    .replaceAll('@knowledgeUrl@', url)
+    .replaceAll(
+      '@targetMonth@',
+      formatMonth(parseMonth(targetMonth, 'yyyyMM'), 'yyyy年MM月'),
+    )
+    .replaceAll(
+      '@targetMonthArticles@',
+      generateArticlesText(targetMonthArticles),
+    )
+    .replaceAll(
+      '@popularArticles@',
+      // NOTE: TOP5のみ
+      generateArticlesText(popularArticles.slice(0, 5)),
+    )
+    .replaceAll(
+      '@contributionGraph@',
+      generateContributionGraph(targetMonthArticles),
+    );
+
+  // ファイルを出力する
+  const filename = resolve(
+    join(
+      '.',
+      outputDir,
+      `${targetMonth}-report.${format(new Date(), 'yyyyMMddHHmmss')}.txt`,
+    ),
+  );
+
+  writeFileSync(filename, content);
 };
 
 /**
@@ -137,6 +235,20 @@ const scribePage = async (
  */
 const getOptions = () =>
   new Command()
+    .requiredOption(
+      '-m, --month [target month]',
+      'Specify the output target month.',
+    )
+    .option(
+      '-t, --template [use template file]',
+      'Specify the template file.',
+      'templates/template.sample.txt',
+    )
+    .option(
+      '-o, --output [output file directory]',
+      'Specify the output destination.',
+      '/tmp',
+    )
     .option('-h, --headless', 'Running in headless mode.', false)
     .parse(process.argv)
     .opts();
@@ -148,8 +260,12 @@ const main = async () => {
   // .envファイルを読み込む
   config();
 
-  const headless = !!getOptions()['headless'];
+  const targetMonth: string = getOptions()['month'];
+  if (!isValid(parseMonth(targetMonth, 'yyyyMM'))) {
+    throw new Error('Specify the month in the format "yyyyMM".');
+  }
 
+  const headless = !!getOptions()['headless'];
   const browser = await chromium.launch({
     headless,
   });
@@ -163,8 +279,18 @@ const main = async () => {
       password: process.env.PASSWORD,
     });
 
-    console.log('latest', latestArticles.slice(0, 5));
-    console.log('popular', popularArticles);
+    const targetMonth: string = getOptions()['month'];
+    const template: string = getOptions()['template'];
+    const outputDir: string = getOptions()['output'];
+
+    outputReport({
+      url: process.env.BASE_URL,
+      template,
+      outputDir,
+      targetMonth,
+      latestArticles,
+      popularArticles,
+    });
   } catch (error) {
     console.error(error);
     process.exit(1);

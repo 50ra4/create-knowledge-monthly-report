@@ -138,7 +138,9 @@ dist
 
 # working dir
 .work
+/tmp
 
 # template dir
 /templates/*
 !/templates/*.sample*
+
