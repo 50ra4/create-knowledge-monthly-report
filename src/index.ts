@@ -225,6 +225,7 @@ const generateContributionGraph = (
  * 取得した情報で記事を出力する
  */
 const outputReport = ({
+  isDryRun,
   targetMonth,
   outputDir,
   template,
@@ -232,6 +233,7 @@ const outputReport = ({
   latestArticles,
   popularArticles,
 }: {
+  isDryRun: boolean;
   targetMonth: string;
   outputDir: string;
   template: string;
@@ -273,6 +275,12 @@ const outputReport = ({
     join('.', outputDir, `${targetMonth}-report.${+new Date()}.txt`),
   );
 
+  if (isDryRun) {
+    console.debug('output filename =>', filename);
+    console.debug('content => ', content);
+    return;
+  }
+
   writeFileSync(filename, content);
 };
 
@@ -295,6 +303,7 @@ const getOptions = () =>
       'Specify the output destination.',
       '/tmp',
     )
+    .option('-d, --dryRun', 'Running dry mode.', false)
     .option('-h, --headless', 'Running in headless mode.', false)
     .parse(process.argv)
     .opts();
@@ -328,8 +337,10 @@ const main = async () => {
     const targetMonth: string = getOptions()['month'];
     const template: string = getOptions()['template'];
     const outputDir: string = getOptions()['output'];
+    const isDryRun = !!getOptions()['dryRun'];
 
     outputReport({
+      isDryRun,
       url: process.env.BASE_URL,
       template,
       outputDir,
