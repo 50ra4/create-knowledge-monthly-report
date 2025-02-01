@@ -52,6 +52,7 @@ const main = async () => {
   const page = await browser.newPage();
 
   try {
+    // NOTE: Knowledgeのページをスクレイピングして記事の情報を収集する
     const { latestArticles, popularArticles } = await scrapePage(page, {
       url: process.env.BASE_URL,
       id: process.env.USERNAME,
@@ -63,6 +64,7 @@ const main = async () => {
     const outputDir: string = getOptions()['output'];
     const isDryRun = !!getOptions()['dryRun'];
 
+    // NOTE: 収集した情報を利用してレポートを成形する
     const report = makeReport({
       url: process.env.BASE_URL,
       template,
@@ -73,7 +75,7 @@ const main = async () => {
 
     /** 出力ファイル名 */
     const filename = resolve(
-      join('.', outputDir, `${targetMonth}-report.${+new Date()}.txt`),
+      join('.', outputDir, `${targetMonth}.report.${+new Date()}.txt`),
     );
 
     if (isDryRun) {
