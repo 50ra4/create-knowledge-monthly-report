@@ -135,3 +135,12 @@ dist
 
 #
 .vscode/settings.json
+
+# working dir
+.work
+/tmp
+
+# template dir
+/templates/*
+!/templates/*.sample*
+
