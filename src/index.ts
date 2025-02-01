@@ -5,15 +5,7 @@ import { chromium, Locator, Page } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isValid, startOfMonth, lastDayOfMonth, getDate } from 'date-fns';
 import { changeMonthFormat, parseDate } from './date';
-
-/** 記事情報のオブジェクト */
-type ArticleMeta = {
-  no: number;
-  title: string;
-  url: string;
-  author: string;
-  postedDate: string;
-};
+import { ArticleMeta } from './article';
 
 /**
  * Locatorから記事情報を抜き出す
