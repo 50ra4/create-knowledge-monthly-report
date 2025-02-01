@@ -3,8 +3,7 @@ import { Command } from 'commander';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { writeFileSync } from 'node:fs';
-import { isValid } from 'date-fns';
-import { parseDate } from './date';
+import { assertDateFormat } from './date';
 import { scrapePage } from './scrapePage';
 import { makeReport } from './makeReport';
 
@@ -40,9 +39,11 @@ const main = async () => {
   config();
 
   const targetMonth: string = getOptions()['month'];
-  if (!isValid(parseDate(targetMonth, 'yyyyMM'))) {
-    throw new Error('Specify the month in the format "yyyyMM".');
-  }
+  assertDateFormat(
+    targetMonth,
+    'yyyyMM',
+    'Specify the month in the format "yyyyMM".',
+  );
 
   const headless = !!getOptions()['headless'];
   const browser = await chromium.launch({

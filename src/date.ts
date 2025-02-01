@@ -1,4 +1,4 @@
-import { format, parse } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 
 type DateFormat =
   | 'yyyyMM'
@@ -16,3 +16,13 @@ export const changeMonthFormat = (
   from: DateFormat,
   to: DateFormat,
 ) => formatDate(parseDate(s, from), to);
+
+export const assertDateFormat: (
+  value: string,
+  format: DateFormat,
+  message: string,
+) => asserts value is string = (value, format, message) => {
+  if (!isValid(parseDate(value, format))) {
+    throw new Error(message);
+  }
+};
