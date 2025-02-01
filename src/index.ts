@@ -26,6 +26,11 @@ const getOptions = () =>
       'Specify the output destination.',
       '/tmp',
     )
+    .option(
+      '--markdown',
+      'Specify if you want to output article links in markdown format',
+      false,
+    )
     .option('-d, --dryRun', 'Running dry mode.', false)
     .option('--headless', 'Running in headless mode.', false)
     .parse(process.argv)
@@ -38,7 +43,7 @@ const main = async () => {
   // .envファイルを読み込む
   config();
 
-  const targetMonth: string = getOptions()['month'];
+  const targetMonth = getOptions()['month'];
   assertDateFormat(
     targetMonth,
     'yyyyMM',
@@ -60,10 +65,8 @@ const main = async () => {
       password: process.env.PASSWORD,
     });
 
-    const targetMonth: string = getOptions()['month'];
     const template: string = getOptions()['template'];
-    const outputDir: string = getOptions()['output'];
-    const isDryRun = !!getOptions()['dryRun'];
+    const shouldMarkdownLink = !!getOptions()['markdown'];
 
     // NOTE: 収集した情報を利用してレポートを成形する
     const report = makeReport({
@@ -72,7 +75,11 @@ const main = async () => {
       targetMonth,
       latestArticles,
       popularArticles,
+      shouldMarkdownLink,
     });
+
+    const outputDir: string = getOptions()['output'];
+    const isDryRun = !!getOptions()['dryRun'];
 
     /** 出力ファイル名 */
     const filename = resolve(

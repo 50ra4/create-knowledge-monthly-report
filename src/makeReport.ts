@@ -7,12 +7,17 @@ import { changeMonthFormat, parseDate } from './date';
  * いい感じに記事の一覧を作成する
  * @param articles
  */
-const generateArticlesText = (articles: ArticleMeta[]) =>
+const generateArticlesText = (
+  articles: ArticleMeta[],
+  shouldMarkdownLink: boolean,
+) =>
   articles
     .reduce(
       (acc, { no, title, url, author }) => [
         ...acc,
-        [`#${no} ${title} by ${author}`, url].join('\n'),
+        shouldMarkdownLink
+          ? `・ [#${no} ${title}](${url}) by ${author}`
+          : [`#${no} ${title} by ${author}`, url].join('\n'),
       ],
       [] as string[],
     )
@@ -80,12 +85,14 @@ export const makeReport = ({
   url,
   latestArticles,
   popularArticles,
+  shouldMarkdownLink,
 }: {
   targetMonth: string;
   template: string;
   url: string;
   latestArticles: ArticleMeta[];
   popularArticles: ArticleMeta[];
+  shouldMarkdownLink: boolean;
 }) => {
   // 当月の記事のみ抽出する
   const targetMonthArticles = latestArticles.filter(
@@ -104,12 +111,12 @@ export const makeReport = ({
     )
     .replaceAll(
       '@targetMonthArticles@',
-      generateArticlesText(targetMonthArticles),
+      generateArticlesText(targetMonthArticles, shouldMarkdownLink),
     )
     .replaceAll(
       '@popularArticles@',
       // NOTE: TOP5のみ
-      generateArticlesText(popularArticles.slice(0, 5)),
+      generateArticlesText(popularArticles.slice(0, 5), shouldMarkdownLink),
     )
     .replaceAll(
       '@contributionGraph@',
