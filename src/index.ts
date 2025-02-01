@@ -327,9 +327,9 @@ const main = async () => {
     headless,
   });
 
-  try {
-    const page = await browser.newPage();
+  const page = await browser.newPage();
 
+  try {
     const { latestArticles, popularArticles } = await scrapePage(page, {
       url: process.env.BASE_URL,
       id: process.env.USERNAME,
@@ -352,6 +352,11 @@ const main = async () => {
     });
   } catch (error) {
     console.error(error);
+    // NOTE: エラー発生時はスクリーンショットを取得する
+    await page.screenshot({
+      fullPage: true,
+      path: `./tmp/error_${+new Date()}.png`,
+    });
     process.exit(1);
   } finally {
     await browser.close();
