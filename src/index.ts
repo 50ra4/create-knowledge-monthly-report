@@ -90,7 +90,7 @@ const createArticleExtractor =
 /**
  * playwrightを使ってブラウザを操作する
  */
-const scribePage = async (
+const scrapePage = async (
   page: Page,
   {
     url,
@@ -330,7 +330,7 @@ const main = async () => {
   try {
     const page = await browser.newPage();
 
-    const { latestArticles, popularArticles } = await scribePage(page, {
+    const { latestArticles, popularArticles } = await scrapePage(page, {
       url: process.env.BASE_URL,
       id: process.env.USERNAME,
       password: process.env.PASSWORD,
