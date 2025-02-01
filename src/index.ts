@@ -3,14 +3,8 @@ import { Command } from 'commander';
 import { join, resolve } from 'node:path';
 import { chromium, Locator, Page } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
-import {
-  parse,
-  format,
-  isValid,
-  startOfMonth,
-  lastDayOfMonth,
-  getDate,
-} from 'date-fns';
+import { isValid, startOfMonth, lastDayOfMonth, getDate } from 'date-fns';
+import { changeMonthFormat, parseDate } from './date';
 
 /** 記事情報のオブジェクト */
 type ArticleMeta = {
@@ -20,20 +14,6 @@ type ArticleMeta = {
   author: string;
   postedDate: string;
 };
-
-type DateFormat =
-  | 'yyyyMM'
-  | 'yyyy年MM月'
-  | 'yyyy-MM'
-  | 'yyyy/MM/dd H:mm'
-  | 'MMMM yyyy';
-
-const parseDate = (s: string, f: DateFormat) => parse(s, f, new Date());
-
-const formatDate = (d: Date, f: DateFormat) => format(d, f);
-
-const changeMonthFormat = (s: string, from: DateFormat, to: DateFormat) =>
-  formatDate(parseDate(s, from), to);
 
 /**
  * Locatorから記事情報を抜き出す
