@@ -26,9 +26,9 @@ $ npm run scrape -- -m [対象日（yyyyMM形式）]
 $ npm run scrape -- -m 202412
 ```
 
-また、出力形式を変更できるように[/templates](/templates)にテンプレートを用意しています。
+また、出力形式を変更できるように[/templates配下にテンプレート](templates/template.sample.txt)を用意しています。
 
-コマンドライン引数でtemplateのpathを指定することで任意のフォーマットで結果を出力することが可能です。
+コマンドライン引数でファイルのpathを指定すると任意のフォーマットで結果を出力することが可能です。
 
 ```bash
 $ npm run scrape -- -m 202412 -t [テンプレートのファイル名]
