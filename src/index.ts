@@ -7,7 +7,6 @@ import {
   parse,
   format,
   isValid,
-  eachDayOfInterval,
   startOfMonth,
   lastDayOfMonth,
   getDate,
@@ -181,24 +180,18 @@ const generateContributionGraph = (
 ) => {
   const title = `${articles.length} contributions in ${changeMonthFormat(targetMonth, 'yyyyMM', 'yyyy年MM月')}`;
 
-  const postedDays = articles.map(({ postedDate }) =>
-    // NOTE: e.g) 2025/01/02 8:09 -> 2
-    getDate(parseDate(postedDate, 'yyyy/MM/dd H:mm')),
-  );
-
   const targetDate = parseDate(targetMonth, 'yyyyMM');
   const startDate = startOfMonth(targetDate);
   const endDate = lastDayOfMonth(targetDate);
 
-  const contributionPoints = eachDayOfInterval({
-    start: startDate,
-    end: endDate,
-  })
-    // NOTE: 日付を取得 e.g) 2025/01/05 -> 5
-    .map((date) => getDate(date))
-    // NOTE: 日付とその日の記事件数のMapを作成
+  // NOTE: 日付とその日の記事件数のMapを作成
+  const contributionPoints = articles
+    .map(({ postedDate }) =>
+      // NOTE: e.g) 2025/01/02 8:09 -> 2
+      getDate(parseDate(postedDate, 'yyyy/MM/dd H:mm')),
+    )
     .reduce(
-      (acc, day) => acc.set(day, postedDays.filter((d) => d === day).length),
+      (acc, day) => acc.set(day, acc.get(day) ?? 0 + 1),
       new Map<number, number>(),
     );
 
