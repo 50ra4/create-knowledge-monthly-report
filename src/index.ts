@@ -166,24 +166,27 @@ const generateArticlesText = (articles: ArticleMeta[]) =>
     )
     .join('\n');
 
+/**
+ * 曜日のラベルの一覧
+ */
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /**
  * 指定した月のコントリビューションカレンダーを作成する
- * @param articles
+ * @param articles 特定の月に投稿した記事の一覧
  */
 const generateContributionGraph = (
   targetMonth: string,
   articles: ArticleMeta[],
 ) => {
-  const title = `${articles.length} contributions in ${changeMonthFormat(targetMonth, 'yyyyMM', 'yyyy-MM')}`;
+  const title = `${articles.length} contributions in ${changeMonthFormat(targetMonth, 'yyyyMM', 'yyyy年MM月')}`;
 
-  const targetDate = parseDate(targetMonth, 'yyyyMM');
   const postedDays = articles.map(({ postedDate }) =>
-    // NOTE: 2025/01/02 -> 2
+    // NOTE: e.g) 2025/01/02 8:09 -> 2
     getDate(parseDate(postedDate, 'yyyy/MM/dd H:mm')),
   );
 
+  const targetDate = parseDate(targetMonth, 'yyyyMM');
   const startDate = startOfMonth(targetDate);
   const endDate = lastDayOfMonth(targetDate);
 
@@ -191,7 +194,7 @@ const generateContributionGraph = (
     start: startDate,
     end: endDate,
   })
-    // NOTE: 文字列に変換
+    // NOTE: 日付を取得 e.g) 2025/01/05 -> 5
     .map((date) => getDate(date))
     // NOTE: 日付とその日の記事件数のMapを作成
     .reduce(
@@ -199,16 +202,17 @@ const generateContributionGraph = (
       new Map<number, number>(),
     );
 
+  // NOTE: 7行 * 5列の配列に月の日にちを設定する
   const metrics = Array.from({ length: 7 })
     .map((_, i) =>
-      // NOTE: 1日が水曜日の場合、最初の日曜日は5日を計算する
       Array.from({ length: 5 }).map(
+        // NOTE: 1日が水曜日の場合、最初の日曜日は5日を計算する
         (_, j) => 7 * j - startDate.getDay() + i + 1,
       ),
     )
     .map((days) =>
       days.map((day) =>
-        // NOTE: 日付が当月でない（0未満または最終日より先）は「-」、記事がある日は「■」、ない日は「□」
+        // NOTE: 日付が当月でない（1未満または最終日より先）は「-」、記事がある日は「■」、ない日は「□」
         day < 1 || getDate(endDate) < day
           ? '-'
           : (contributionPoints.get(day) ?? 0) > 0
