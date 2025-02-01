@@ -21,7 +21,12 @@ type ArticleMeta = {
   postedDate: string;
 };
 
-type DateFormat = 'yyyyMM' | 'yyyy年MM月' | 'yyyy-MM' | 'yyyy/MM/dd H:mm';
+type DateFormat =
+  | 'yyyyMM'
+  | 'yyyy年MM月'
+  | 'yyyy-MM'
+  | 'yyyy/MM/dd H:mm'
+  | 'MMMM yyyy';
 
 const parseDate = (s: string, f: DateFormat) => parse(s, f, new Date());
 
@@ -178,7 +183,7 @@ const generateContributionGraph = (
   targetMonth: string,
   articles: ArticleMeta[],
 ) => {
-  const title = `${articles.length} contributions in ${changeMonthFormat(targetMonth, 'yyyyMM', 'yyyy年MM月')}`;
+  const title = `${articles.length} contributions in ${changeMonthFormat(targetMonth, 'yyyyMM', 'MMMM yyyy')}`;
 
   const targetDate = parseDate(targetMonth, 'yyyyMM');
   const startDate = startOfMonth(targetDate);
