@@ -306,7 +306,7 @@ const getOptions = () =>
       '/tmp',
     )
     .option('-d, --dryRun', 'Running dry mode.', false)
-    .option('-h, --headless', 'Running in headless mode.', false)
+    .option('--headless', 'Running in headless mode.', false)
     .parse(process.argv)
     .opts();
 

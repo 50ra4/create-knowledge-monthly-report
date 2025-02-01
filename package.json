@@ -9,7 +9,7 @@
     "lint:eslint": "eslint --fix '{tests}/**/*.{js,ts}'",
     "lint": "npm run lint:prettier && npm run lint:eslint",
     "check-type": "tsc --noEmit",
-    "scribe": "node --loader ts-node/esm src/index.ts",
+    "scrape": "node --loader ts-node/esm src/index.ts",
     "prepare": "husky"
   },
   "keywords": [],
