@@ -68,7 +68,7 @@ const generateContributionGraph = (
     )
     .map((cells, i) => [WEEKDAYS[i], ...cells].join(' '));
 
-  return [title, ...metrics].join('\n');
+  return [title, '```', ...metrics, '```'].join('\n');
 };
 
 /**
