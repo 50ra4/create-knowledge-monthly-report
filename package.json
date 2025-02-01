@@ -5,8 +5,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint:prettier": "prettier --write '{tests}/**/*.{js,ts}'",
-    "lint:eslint": "eslint --fix '{tests}/**/*.{js,ts}'",
+    "lint:prettier": "prettier --write '{src,tests}/**/*.{js,ts}'",
+    "lint:eslint": "eslint --fix '{src,tests}/**/*.{js,ts}'",
     "lint": "npm run lint:prettier && npm run lint:eslint",
     "check-type": "tsc --noEmit",
     "scrape": "node --loader ts-node/esm src/index.ts",
