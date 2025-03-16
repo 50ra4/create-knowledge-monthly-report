@@ -95,11 +95,14 @@ export const makeReport = ({
   shouldMarkdownLink: boolean;
 }) => {
   // 当月の記事のみ抽出する
-  const targetMonthArticles = latestArticles.filter(
-    ({ postedDate }) =>
-      targetMonth ===
-      changeMonthFormat(postedDate, 'yyyy/MM/dd H:mm', 'yyyyMM'),
-  );
+  const targetMonthArticles = latestArticles
+    .slice()
+    .filter(
+      ({ postedDate }) =>
+        targetMonth ===
+        changeMonthFormat(postedDate, 'yyyy/MM/dd H:mm', 'yyyyMM'),
+    )
+    .sort(({ no: a }, { no: b }) => a - b);
 
   const targetMonthArticleNumbers = new Set(
     targetMonthArticles.map(({ no }) => no),
