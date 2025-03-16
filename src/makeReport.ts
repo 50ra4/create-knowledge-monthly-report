@@ -1,4 +1,4 @@
-import { startOfMonth, lastDayOfMonth, getDate } from 'date-fns';
+import { startOfMonth, lastDayOfMonth, getDate, compareAsc } from 'date-fns';
 import { readFileSync } from 'node:fs';
 import { ArticleMeta } from './article';
 import { changeMonthFormat, parseDate } from './date';
@@ -95,11 +95,18 @@ export const makeReport = ({
   shouldMarkdownLink: boolean;
 }) => {
   // 当月の記事のみ抽出する
-  const targetMonthArticles = latestArticles.filter(
-    ({ postedDate }) =>
-      targetMonth ===
-      changeMonthFormat(postedDate, 'yyyy/MM/dd H:mm', 'yyyyMM'),
-  );
+  const targetMonthArticles = latestArticles
+    .filter(
+      ({ postedDate }) =>
+        targetMonth ===
+        changeMonthFormat(postedDate, 'yyyy/MM/dd H:mm', 'yyyyMM'),
+    )
+    .sort(({ postedDate: a }, { postedDate: b }) =>
+      compareAsc(
+        parseDate(a, 'yyyy/MM/dd H:mm'),
+        parseDate(b, 'yyyy/MM/dd H:mm'),
+      ),
+    );
 
   const targetMonthArticleNumbers = new Set(
     targetMonthArticles.map(({ no }) => no),
