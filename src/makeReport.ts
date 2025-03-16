@@ -101,6 +101,15 @@ export const makeReport = ({
       changeMonthFormat(postedDate, 'yyyy/MM/dd H:mm', 'yyyyMM'),
   );
 
+  const targetMonthArticleNumbers = new Set(
+    targetMonthArticles.map(({ no }) => no),
+  );
+
+  // 人気記事から当月の記事を除いたTOP5を取得する
+  const top5PopularArticles = popularArticles
+    .filter(({ no }) => !targetMonthArticleNumbers.has(no))
+    .slice(0, 5);
+
   const content = readFileSync(template, 'utf-8')
     .toString()
     // タグを置き換える
@@ -116,7 +125,7 @@ export const makeReport = ({
     .replaceAll(
       '@popularArticles@',
       // NOTE: TOP5のみ
-      generateArticlesText(popularArticles.slice(0, 5), shouldMarkdownLink),
+      generateArticlesText(top5PopularArticles, shouldMarkdownLink),
     )
     .replaceAll(
       '@contributionGraph@',
